@@ -1,0 +1,38 @@
+{:edge.kick/config
+ {:kick.builder/target #profile {:dev "target/dev"
+                                 :prod "target/prod"}
+  :kick/figwheel-main {:builds [{:id "app"
+                                 :main poe-apps.store-manager.frontend.main
+                                 :output-to "public/frontend.js"
+                                 :output-dir "public/frontend.out"
+                                 :asset-path "/frontend.out"
+                                 :optimizations #profile {:dev :none
+                                                          :prod :advanced}}]
+                       :figwheel-config
+                       {:ring-server-options
+                        {:port 5700}}}}
+
+ :ig.system/base
+ {:poe-apps.store-manager.foo/string "Hello, store-manager!"
+  :poe-apps.store-manager.foo/tabs-resource "test"
+  :poe-apps.store-manager.foo/cached "test"
+  [:edge.yada.ig/classpath-name :poe-apps.store-manager/index] {:name "index.html"}
+  [:edge.yada.ig/resources :poe-apps.store-manager/assets] {:path "public/"}
+  :edge.yada.ig/listener {:handler #ig/ref :edge.bidi.ig/vhost
+                          :port 8989}
+  :edge.bidi.ig/vhost [["http://localhost:8989"
+                        [""
+                         [["/" #ig/ref [:edge.yada.ig/classpath-name :poe-apps.store-manager/index]]
+                          ["/hello" #ig/ref :poe-apps.store-manager.foo/string]
+                          ["/tabs" [
+                                    ["" #ig/ref :poe-apps.store-manager.foo/tabs-resource]
+                                    [["/" :id] #ig/ref :poe-apps.store-manager.foo/cached]
+                                    ]]
+                          ["" #ig/ref [:edge.yada.ig/resources :poe-apps.store-manager/assets]]]]]]}
+
+ :ig.system/dev
+ {:edge.kick/builder #ref [:edge.kick/config]}
+
+ :ig/system #profile {:dev #merge [#ref [:ig.system/base]
+                                   #ref [:ig.system/dev]]
+                      :default #ref [:ig.system/base]}}
