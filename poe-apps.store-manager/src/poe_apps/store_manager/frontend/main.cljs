@@ -1,14 +1,154 @@
-(ns ^:figwheel-hooks poe-apps.store-manager.frontend.main)
+(ns ^:figwheel-hooks poe-apps.store-manager.frontend.main
+  (:require [reagent.core :as reagent]
+            [re-frame.core :as rf]
+            [day8.re-frame.http-fx]
+            [ajax.core :as ajax]
+            [poe-apps.store-manager.frontend.routes :as routes]
+            [cljs.pprint :as pprint]))
 
-(js/console.log "Hello, wasdf")
+;;;;;;;;;;;;;;;;;;;;;;; EVENTS ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(rf/reg-event-db
+ :active-route
+ (fn [db [_ route]]
+   (println)
+   (assoc db :active-route route)))
+
+(rf/reg-event-db
+ :initialize
+ (fn [_ _]
+   (rf/dispatch [:update-tab-list nil])
+   {:tab-list []
+    :active-route {:handler :home}}))
+
+(rf/reg-event-fx
+ :update-tab-list
+ (fn [_ _]
+   {:http-xhrio
+    {:method :get
+     :uri "/tabs"
+     :response-format (ajax/json-response-format {:keywords? true})
+     :on-success [:tab-update-response]
+     :on-failure [:tab-update-response-error]}}))
+
+(rf/reg-event-db
+ :tab-update-response
+ (fn [db [_ body]]
+   (assoc db :tab-list body)))
+
+(rf/reg-event-db
+ :tab-update-response-error
+ (fn [db [_ body]]
+   (println body)
+   db))
+
+;;;;;;;;;;;;;;;;;;;;;;; QUERIES ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(rf/reg-sub
+ :tab-list
+ (fn [db _]
+   (:tab-list db)))
+
+(rf/reg-sub
+ :active-route
+ (fn [db _]
+   (:active-route db)))
+
+;;;;;;;;;;;;;;;;;;;;;;; VIEWS ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def type-tab-name #({"CurrencyStash" "Currency"
+                      "NormalStash" "Normal"
+                      "QuadStash" "Quad"
+                      "MapStash" "Map"
+                      "PremiumStash" "Premium"
+                      "FragmentStash" "Fragment"
+                      "EssenceStash" "Essence"
+                      "DivinationCardStash" "Divination"} % %))
+
+(defn tab-color-style
+  [{{:keys [r g b]} :colour}]
+  (pprint/cl-format nil "rgb(~D, ~D, ~D)" r g b))
+
+(defn tab-list-row
+  [tab]
+  [:tr
+   {:key (:i tab)}
+   [:td (:i tab)]
+   [:td (:n tab)]
+   [:td
+    [:div
+     {:style  {:background-color (tab-color-style tab)
+               :width "100px"
+               :height "1em"}}]]
+   [:td (type-tab-name (:type tab))]
+   [:td
+    [:img {:src (:srcL tab)}]
+    [:img {:src (:srcC tab)}]
+    [:img {:src (:srcR tab)}]]])
+
+(defn tab-list-view
+  []
+  (let [tab-list @(rf/subscribe [:tab-list])]
+    [:div.row>div.col "Tabs: " (count tab-list)]
+    [:div.row>div.col
+     [:div.tab-list
+      [:table.striped
+       [:thead>tr
+        [:th "Index"]
+        [:th "Name"]
+        [:th "Color"]
+        [:th "Type"]
+        [:th "Image"]]
+       [:tbody
+        (map tab-list-row tab-list)]]]]))
+
+(defmulti page :handler)
+
+(defmethod page :home
+  [_]
+  [:div.row>div.col "Home"])
+
+(defmethod page :default
+  [_]
+  [:div.row>div.col "Not found"])
+
+(defmethod page :tabs
+  [_]
+  [tab-list-view])
+
+(defmethod page :about
+  [_]
+  [:div.row>div.col "Nice try"])
+
+(defn ui
+  []
+  [:div
+   #_[:div.row
+      [:div.col
+       [:h1 "Hello"]]]
+   [:div.row
+    [:div.col-1>a {:href (routes/url-for :home)} "Home"]
+    [:div.col-1>a {:href (routes/url-for :tabs)} "Tabs"]
+    [:div.col-1>a {:href (routes/url-for :about)} "About"]]
+   [page @(rf/subscribe [:active-route])]
+   #_[tab-list-view]])
+
+(defn ^:export run
+  []
+  (rf/dispatch-sync [:initialize])
+  (routes/app-routes)
+  (reagent/render [ui]
+                  (js/document.getElementById "app")))
 
 ;; This is called once
 (defonce init
-  (do (set! (.-innerHTML (js/document.getElementById "app"))
-            "<p>Loaded store-manager!</p>
-            <p>Edit src/poe_apps/store_manager/frontend/main.cljs to change this message.</p>")
+  (do (run)
       true))
 
+
 ;; This is called every time you make a code change
-(defn ^:after-load reload []
-  (set! (.-innerText (js/document.getElementById "app")) "Reloaded store-manager!"))
+
+
+#_(defn ^:after-load reload []
+    (set! (.-innerText (js/document.getElementById "app")) "Reloaded store-manager!"))
