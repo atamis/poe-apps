@@ -14,14 +14,12 @@
 (rf/reg-event-db
  :active-route
  (fn [db [_ route]]
-   (println)
    (assoc db :active-route route)))
 
 (rf/reg-event-db
  :initialize
  (fn [_ _]
    (rf/dispatch [:update-tab-list nil])
-   (rf/dispatch [:update-stash 0])
    {:tab-list []
     :active-route {:handler :home}
     :stashes {}
@@ -40,6 +38,9 @@
 (rf/reg-event-db
  :tab-update-response
  (fn [db [_ body]]
+   (doseq [idx (map :i body)]
+     (rf/dispatch [:update-stash idx])
+     )
    (assoc db :tab-list body)))
 
 (rf/reg-event-db
@@ -66,20 +67,14 @@
  (fn [db _]
    (-> db :stashes keys sort)))
 
+(rf/reg-sub
+ :tab-meta
+ (fn [db [_ idx]]
+   (-> db :tab-list (get idx))
+   )
+ )
+
 ;;;;;;;;;;;;;;;;;;;;;;; VIEWS ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(def type-tab-name #({"CurrencyStash" "Currency"
-                      "NormalStash" "Normal"
-                      "QuadStash" "Quad"
-                      "MapStash" "Map"
-                      "PremiumStash" "Premium"
-                      "FragmentStash" "Fragment"
-                      "EssenceStash" "Essence"
-                      "DivinationCardStash" "Divination"} % %))
-
-(defn tab-color-style
-  [{{:keys [r g b]} :colour}]
-  (pprint/cl-format nil "rgb(~D, ~D, ~D)" r g b))
 
 (defn tab-list-row
   [tab]
@@ -89,10 +84,10 @@
    [:td (:n tab)]
    [:td
     [:div
-     {:style  {:background-color (tab-color-style tab)
+     {:style  {:background-color (stashes/tab-color-style tab)
                :width "100px"
                :height "1em"}}]]
-   [:td (type-tab-name (:type tab))]
+   [:td (stashes/type-tab-name (:type tab))]
    [:td
     [:img {:src (:srcL tab)}]
     [:img {:src (:srcC tab)}]

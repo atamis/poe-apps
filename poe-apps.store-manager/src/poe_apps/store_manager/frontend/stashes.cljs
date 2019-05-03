@@ -5,7 +5,8 @@
             [poe-info.item :as item]
             [poe-info.util :as util]
             [poe-info.constants :as constants]
-            [clojure.string :as string]))
+            [clojure.string :as string]
+            [cljs.pprint :as pprint]))
 
 ;;;;;;;;;;;;;;;;;;;;;;; EVENTS ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -52,12 +53,34 @@
   [{:keys [x y]}]
   (+ y (* x constants/stash-height)))
 
+(defn tab-color-style
+  [{{:keys [r g b]} :colour}]
+  (pprint/cl-format nil "rgb(~D, ~D, ~D)" r g b))
+
+(def type-tab-name #({"CurrencyStash" "Currency"
+                      "NormalStash" "Normal"
+                      "QuadStash" "Quad"
+                      "MapStash" "Map"
+                      "PremiumStash" "Premium"
+                      "FragmentStash" "Fragment"
+                      "EssenceStash" "Essence"
+                      "DivinationCardStash" "Divination"} % %))
+
+
 (defn stash-list-view
   []
   [:div.row>div.col
-   (map (fn [idx] [:a {:key idx
-                       :href (routes/url-for :stashes :id idx)} idx])
-        @(rf/subscribe [:stash-list]))])
+   [:div.tab-list
+    (map (fn [tab]
+           (let [{idx :i name :n} tab]
+             [:div.tab
+              {:key idx
+               :style {:background-color (tab-color-style tab)}
+               :title name
+               }
+              [:a {:href (routes/url-for :stashes :id idx)}
+               name]]))
+         @(rf/subscribe [:tab-list]))]])
 
 (def rarity-color
   {:normal "#eeeeeeee"
@@ -107,16 +130,36 @@
 
 (defn stash-view
   [idx]
-  (let [stash @(rf/subscribe [::stash idx])
+  (let [tab-meta @(rf/subscribe [:tab-meta idx])
+        stash @(rf/subscribe [::stash idx])
         items (sort-by lexigraphic-stash-index (:items stash))]
     [:div
-     [:div.row
-      [:div.col-1
-       idx]
-      [:div.col-1
-       [:a.button
-        {:on-click #(rf/dispatch [:update-stash idx])}
-        "Load"]]]
+     (let [{idx :i name :n :keys []} tab-meta]
+       [:div
+        [:div.row
+         [:div.col-1 "Index"]
+         [:div.col-1 "Name"]
+         [:div.col-1 "Color"]
+         [:div.col-1 "Type"]
+         [:div.col-1 "Image"]
+         ]
+        [:div.row
+         [:div.col-1 idx]
+         [:div.col-1 name]
+         [:div.col-1
+          [:div
+           {:style  {:background-color (tab-color-style tab-meta)
+                     :width "100px"
+                     :height "1em"}}]]
+         [:div.col-1 (type-tab-name (:type tab-meta))]
+         [:div.col-1
+          [:img {:src (:srcL tab-meta)}]
+          [:img {:src (:srcC tab-meta)}]
+          [:img {:src (:srcR tab-meta)}]]
+         [:div.col-1
+          [:a.button
+           {:on-click #(rf/dispatch [:update-stash idx])}
+           "Load"]]]])
      [:div.row>div.col
       [:table.striped
        [:thead
