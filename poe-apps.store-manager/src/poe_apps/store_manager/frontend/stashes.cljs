@@ -109,7 +109,7 @@
 
 
 (defn item-table-list
-  [item]
+  [item note?]
   [:tr {:key (:id item)}
    [:td [:a {:href (routes/url-for :items :id (:id item))}
          (item/full-item-name item)]]
@@ -121,9 +121,10 @@
     {:style {:background-color (rarity-color (item/rarity item))}}
     (string/capitalize (name (item/rarity item)))]
 
-   [:td
-    [:pre
-     (str (:note item))]]
+   (when note?
+     [:td
+      [:pre
+       (str (:note item))]])
 
    [:td
     [item-blocks-view (item/item->blocks item)]
@@ -133,7 +134,9 @@
   [idx]
   (let [tab-meta @(rf/subscribe [:tab-meta idx])
         stash @(rf/subscribe [::stash idx])
-        items (sort-by lexigraphic-stash-index (:items stash))]
+        items (sort-by lexigraphic-stash-index (:items stash))
+        note? (some? (first  (filter #(contains? % :note) items)))
+        ]
     [:div
      (let [{idx :i name :n :keys []} tab-meta]
        [:div
@@ -168,8 +171,9 @@
          [:th "Name"]
          [:th "Icon"]
          [:th "Rarity"]
-         [:th "Note"]
+         (when note?
+           [:th "Note"])
          [:th "Item"]]]
 
        [:tbody
-        (map item-table-list items)]]]]))
+        (map #(item-table-list % note?) items)]]]]))
