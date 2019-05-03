@@ -103,7 +103,7 @@
                           (fn [[idx2 line]] [:div {:key [idx1 idx2]} line])
                           (util/enumerate block))])
      (util/enumerate blocks))
-    (take 5 (iterate (fn [_] [:hr {:key (gensym)}]) nil))
+    (iterate (fn [_] [:hr {:key (gensym)}]) nil)
     )]
   )
 
