@@ -111,7 +111,8 @@
 (defn item-table-list
   [item]
   [:tr {:key (:id item)}
-   [:td (item/full-item-name item)]
+   [:td [:a {:href (routes/url-for :items :id (:id item))}
+         (item/full-item-name item)]]
 
    [:td [:img {:src (:icon item)
                :title (item/item->str item)}]]

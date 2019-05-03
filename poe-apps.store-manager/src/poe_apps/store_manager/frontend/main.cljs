@@ -5,6 +5,7 @@
             [ajax.core :as ajax]
             [poe-apps.store-manager.frontend.routes :as routes]
             [poe-apps.store-manager.frontend.stashes :as stashes]
+            [poe-apps.store-manager.frontend.items :as items-frontend]
             [cljs.pprint :as pprint]
             ))
 
@@ -146,6 +147,16 @@
                  js/parseInt)]
      [stashes/stash-view idx]
      )]
+  )
+
+(defmethod page :items
+  [_]
+  (let [id (-> (rf/subscribe [:active-route])
+               deref
+               :route-params
+               :id)]
+    [items-frontend/item-view id]
+    )
   )
 
 (defmethod page :about

@@ -11,6 +11,7 @@
                   "stashes/" {"" :stashes-home
                               [:id "/"] :stashes
                               }
+                  "items/" {[:id "/"] :items}
                   "about" :about}])
 
 
