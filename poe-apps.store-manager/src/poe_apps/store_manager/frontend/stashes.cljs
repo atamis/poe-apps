@@ -1,0 +1,131 @@
+(ns poe-apps.store-manager.frontend.stashes
+  (:require [poe-apps.store-manager.frontend.routes :as routes]
+            [re-frame.core :as rf]
+            [ajax.core :as ajax]
+            [poe-info.item :as item]
+            [poe-info.util :as util]
+            [poe-info.constants :as constants]
+            [clojure.string :as string]))
+
+;;;;;;;;;;;;;;;;;;;;;;; EVENTS ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(rf/reg-event-fx
+ :update-stash
+ (fn [_ [_ idx]]
+   {:http-xhrio
+    {:method :get
+     :uri (str "/tabs/" idx)
+     :response-format (ajax/json-response-format {:keywords? true})
+     :on-success [::update-stash-response idx]
+     :on-failure [::update-stash-response-error idx]}}))
+
+(rf/reg-event-db
+ ::update-stash-response
+ (fn [db [_ idx body]]
+   (println "Updating stash" idx)
+   (assoc-in db [:stashes idx] body)))
+
+(rf/reg-event-fx
+ ::update-stash-response-error
+ (fn [_ [_ idx body]]
+   (println "Error encountered loading stash" idx ":" body)
+   {}))
+
+
+;;;;;;;;;;;;;;;;;;;;;;; QUERIES ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(rf/reg-sub
+ ::stash
+ (fn [db [_ idx]]
+   (-> db :stashes (get idx))))
+
+;;;;;;;;;;;;;;;;;;;;;;; VIEWS ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; from poe-info/src/clj/poe-info/gems.clj
+
+
+(defn lexigraphic-stash-index
+  "Starts at 0 for the top left corner, and increases down and to the right.
+  Good for a human understandable index (kind of). "
+  [{:keys [x y]}]
+  (+ y (* x constants/stash-height)))
+
+(defn stash-list-view
+  []
+  [:div.row>div.col
+   (map (fn [idx] [:a {:key idx
+                       :href (routes/url-for :stashes :id idx)} idx])
+        @(rf/subscribe [:stash-list]))])
+
+(def rarity-color
+  {:normal "#eeeeeeee"
+   :magic "rgb(136, 120, 255)"
+   :rare "rgb(245, 255, 120)"
+   :unique "rgb(255, 196, 120)"
+   :gem "rgb(96, 212, 206)"
+   :currency "rgb(187, 187, 187)"
+   :divination "rgb(255, 232, 216)"
+   :prophecy "rgb(255, 120, 250)"})
+
+(defn item-blocks-view
+  [blocks]
+  [:div
+   {:class "item-block"}
+   (interleave
+    (map
+     (fn [[idx1 block]] [:div {:key idx1}
+                         (map
+                          (fn [[idx2 line]] [:div {:key [idx1 idx2]} line])
+                          (util/enumerate block))])
+     (util/enumerate blocks))
+    (take 5 (iterate (fn [_] [:hr {:key (gensym)}]) nil))
+    )]
+  )
+
+
+(defn item-table-list
+  [item]
+  [:tr {:key (:id item)}
+   [:td (item/full-item-name item)]
+
+   [:td [:img {:src (:icon item)
+               :title (item/item->str item)}]]
+
+   [:td
+    {:style {:background-color (rarity-color (item/rarity item))}}
+    (string/capitalize (name (item/rarity item)))]
+
+   [:td
+    [:pre
+     (str (:note item))]]
+
+   [:td
+    [item-blocks-view (item/item->blocks item)]
+    ]])
+
+(defn stash-view
+  [idx]
+  (let [stash @(rf/subscribe [::stash idx])
+        items (sort-by lexigraphic-stash-index (:items stash))]
+    [:div
+     [:div.row
+      [:div.col-1
+       idx]
+      [:div.col-1
+       [:a.button
+        {:on-click #(rf/dispatch [:update-stash idx])}
+        "Load"]]]
+     [:div.row>div.col
+      [:table.striped
+       [:thead
+        [:tr
+         [:th "Name"]
+         [:th "Icon"]
+         [:th "Rarity"]
+         [:th "Note"]
+         [:th "Item"]]]
+
+       [:tbody
+        (map item-table-list items)]]]]))

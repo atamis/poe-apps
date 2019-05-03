@@ -9,7 +9,7 @@
 (def routes ["/" {"" :home
                   "tabs" :tabs
                   "stashes/" {"" :stashes-home
-                              ":id/" :stashes-index
+                              [:id "/"] :stashes
                               }
                   "about" :about}])
 
@@ -26,4 +26,4 @@
 (defn app-routes []
   (pushy/start! (pushy/pushy dispatch-route parse-url)))
 
-(def url-for #(str "/#" (bidi/path-for routes %)))
+(def url-for #(str "/#" (apply bidi/path-for routes %&)))

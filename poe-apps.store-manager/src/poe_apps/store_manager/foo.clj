@@ -4,20 +4,22 @@
    [integrant.core :as ig]
    [clojure.data.json :as json]
 
-   [clojure.java.io :as io]))
-
+   [clojure.java.io :as io]
+   [clojure.string :as string]))
 
 (def files (->> (io/file "cache/")
-                 file-seq
-                 (filter #(.endsWith (.getName %) ".json"))
-                 (sort-by #(.getName %))
-                 (map
-                  (fn [file]
-                    (let [name (.getName file)]
-                      (with-open [f (io/reader file)]
-                        (json/read f :key-fn keyword)))))
-                 (into [])
-                 ))
+                file-seq
+                (filter #(.endsWith (.getName %) ".json"))
+                (sort-by #(Integer/parseInt
+                           (second
+                            (string/split (.getName %)
+                                          #"_"))))
+                (map
+                 (fn [file]
+                   (let [name (.getName file)]
+                     (with-open [f (io/reader file)]
+                       (json/read f :key-fn keyword)))))
+                (into [])))
 
 (defmethod ig/init-key ::cached
   [_ x]
@@ -27,9 +29,7 @@
     :methods {:get {:produces #{"application/json"
                                 "application/edn;q=0.9"}
                     :response (fn [ctx]
-                                (nth files (get-in ctx [:parameters :path :id])))}}}
-   )
-  )
+                                (nth files (get-in ctx [:parameters :path :id])))}}}))
 
 (def tabs (->> files first :tabs))
 

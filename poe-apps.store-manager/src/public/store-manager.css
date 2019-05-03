@@ -1,28 +1,3 @@
-/*html, body {
-  height: 100%;
-
-  font-family: sans-serif;
+.item-block {
+  font-size: 8pt;
 }
-
-*, *:after, *:before {
-  box-sizing: border-box;
-}
-
-body {
-  display: flex;
-  /* justify-content: center; */
-  /* align-items: center; */
-
-  margin: 0;
-  padding: 1em;
-}
-
-#app {
-  box-sizing: border-box;
-  min-height: 50px;
-  width: 100%;
-  /*background-color: #efefef;
-   box-shadow: 0 0 5px rgba(0, 0, 0, 0.4); */
-  padding: 1em;
-}
-*/

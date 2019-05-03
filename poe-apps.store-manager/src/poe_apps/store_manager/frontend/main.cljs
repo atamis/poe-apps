@@ -4,7 +4,9 @@
             [day8.re-frame.http-fx]
             [ajax.core :as ajax]
             [poe-apps.store-manager.frontend.routes :as routes]
-            [cljs.pprint :as pprint]))
+            [poe-apps.store-manager.frontend.stashes :as stashes]
+            [cljs.pprint :as pprint]
+            ))
 
 ;;;;;;;;;;;;;;;;;;;;;;; EVENTS ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -19,8 +21,11 @@
  :initialize
  (fn [_ _]
    (rf/dispatch [:update-tab-list nil])
+   (rf/dispatch [:update-stash 0])
    {:tab-list []
-    :active-route {:handler :home}}))
+    :active-route {:handler :home}
+    :stashes {}
+    }))
 
 (rf/reg-event-fx
  :update-tab-list
@@ -43,6 +48,7 @@
    (println body)
    db))
 
+
 ;;;;;;;;;;;;;;;;;;;;;;; QUERIES ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (rf/reg-sub
@@ -54,6 +60,11 @@
  :active-route
  (fn [db _]
    (:active-route db)))
+
+(rf/reg-sub
+ :stash-list
+ (fn [db _]
+   (-> db :stashes keys sort)))
 
 ;;;;;;;;;;;;;;;;;;;;;;; VIEWS ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -85,7 +96,13 @@
    [:td
     [:img {:src (:srcL tab)}]
     [:img {:src (:srcC tab)}]
-    [:img {:src (:srcR tab)}]]])
+    [:img {:src (:srcR tab)}]]
+   [:td
+    [:a.button
+     {:on-click #(rf/dispatch [:update-stash (:i tab)])}
+     "Load"]
+    ]
+   ])
 
 (defn tab-list-view
   []
@@ -99,7 +116,9 @@
         [:th "Name"]
         [:th "Color"]
         [:th "Type"]
-        [:th "Image"]]
+        [:th "Image"]
+        [:th ""]
+        ]
        [:tbody
         (map tab-list-row tab-list)]]]]))
 
@@ -117,6 +136,23 @@
   [_]
   [tab-list-view])
 
+(defmethod page :stashes-home
+  [_]
+  [stashes/stash-list-view])
+
+(defmethod page :stashes
+  [_]
+  [:div
+   [stashes/stash-list-view]
+   (let [idx (-> (rf/subscribe [:active-route])
+                 deref
+                 :route-params
+                 :id
+                 js/parseInt)]
+     [stashes/stash-view idx]
+     )]
+  )
+
 (defmethod page :about
   [_]
   [:div.row>div.col "Nice try"])
@@ -124,15 +160,12 @@
 (defn ui
   []
   [:div
-   #_[:div.row
-      [:div.col
-       [:h1 "Hello"]]]
    [:div.row
     [:div.col-1>a {:href (routes/url-for :home)} "Home"]
     [:div.col-1>a {:href (routes/url-for :tabs)} "Tabs"]
+    [:div.col-1>a {:href (routes/url-for :stashes-home)} "Stashes"]
     [:div.col-1>a {:href (routes/url-for :about)} "About"]]
-   [page @(rf/subscribe [:active-route])]
-   #_[tab-list-view]])
+   [page @(rf/subscribe [:active-route])]])
 
 (defn ^:export run
   []
