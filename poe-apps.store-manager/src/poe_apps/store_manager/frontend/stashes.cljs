@@ -66,7 +66,6 @@
                       "EssenceStash" "Essence"
                       "DivinationCardStash" "Divination"} % %))
 
-
 (defn stash-list-view
   []
   [:div.row>div.col
@@ -76,8 +75,7 @@
              [:div.tab
               {:key idx
                :style {:background-color (tab-color-style tab)}
-               :title name
-               }
+               :title name}
               [:a {:href (routes/url-for :stashes :id idx)}
                name]]))
          @(rf/subscribe [:tab-list]))]])
@@ -103,10 +101,7 @@
                           (fn [[idx2 line]] [:div {:key [idx1 idx2]} line])
                           (util/enumerate block))])
      (util/enumerate blocks))
-    (iterate (fn [_] [:hr {:key (gensym)}]) nil)
-    )]
-  )
-
+    (iterate (fn [_] [:hr {:key (gensym)}]) nil))])
 
 (defn item-table-list
   [item note?]
@@ -127,18 +122,29 @@
        (str (:note item))]])
 
    [:td
-    [item-blocks-view (item/item->blocks item)]
-    ]])
+    [item-blocks-view (item/item->blocks item)]]])
+
+(def stash-capacity {"NormalStash" constants/normal-stash
+                     "PremiumStash" constants/normal-stash
+                     "QuadStash" constants/quad-stash
+                     "CurrencyStash" constants/currency-stash
+                     "DivinationCardStash" constants/divination-stash
+                     "EssenceStash" constants/essence-stash
+                     "FragmentStash" constants/fragment-stash})
 
 (defn stash-view
   [idx]
   (let [tab-meta @(rf/subscribe [:tab-meta idx])
         stash @(rf/subscribe [::stash idx])
         items (sort-by lexigraphic-stash-index (:items stash))
-        note? (some? (first  (filter #(contains? % :note) items)))
-        ]
+        note? (some? (first  (filter #(contains? % :note) items)))]
     [:div
-     (let [{idx :i name :n :keys []} tab-meta]
+     (let [{idx :i name :n stash-type :type :keys []} tab-meta
+           capacity (stash-capacity stash-type)
+           ;; Some stashes have single slots that hold any size
+           ;; item, but count as 1 space. This leads to this number
+           ;; being a little misleading.
+           space (->> items (map item/size) (reduce +))]
        [:div
         [:div.row
          [:div.col-1 "Index"]
@@ -146,7 +152,11 @@
          [:div.col-1 "Color"]
          [:div.col-1 "Type"]
          [:div.col-1 "Image"]
-         ]
+         [:div.col-1 "Items"]
+         [:div.col-1 "Space"]
+         [:div.col-1 "Capacity"]
+         [:div.col-1 "Free"]
+         [:div.col-1 "Full"]]
         [:div.row
          [:div.col-1 idx]
          [:div.col-1 name]
@@ -160,6 +170,16 @@
           [:img {:src (:srcL tab-meta)}]
           [:img {:src (:srcC tab-meta)}]
           [:img {:src (:srcR tab-meta)}]]
+         [:div.col-1
+          [:span (count items)]]
+         [:div.col-1
+          [:span space]]
+         [:div.col-1
+          [:span capacity]]
+         [:div.col-1
+          [:span (- capacity space)]]
+         [:div.col-1
+          [:span (pprint/cl-format nil "~5F" (* 100 (/ space capacity))) "%"]]
          [:div.col-1
           [:a.button
            {:on-click #(rf/dispatch [:update-stash idx])}
