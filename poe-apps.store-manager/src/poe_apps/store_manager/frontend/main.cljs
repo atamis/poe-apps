@@ -31,7 +31,7 @@
  (fn [_ _]
    {:http-xhrio
     {:method :get
-     :uri "/tabs"
+     :uri "/api/tabs"
      :response-format (ajax/json-response-format {:keywords? true})
      :on-success [:tab-update-response]
      :on-failure [:tab-update-response-error]}}))

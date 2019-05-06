@@ -1,4 +1,4 @@
-(ns poe-apps.store-manager.foo
+(ns poe-apps.store-manager.tabs
   (:require
    [yada.yada :as yada]
    [integrant.core :as ig]

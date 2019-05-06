@@ -16,7 +16,7 @@
  (fn [_ [_ idx]]
    {:http-xhrio
     {:method :get
-     :uri (str "/tabs/" idx)
+     :uri (str "/api/tabs/" idx)
      :response-format (ajax/json-response-format {:keywords? true})
      :on-success [::update-stash-response idx]
      :on-failure [::update-stash-response-error idx]}}))
