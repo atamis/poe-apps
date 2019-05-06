@@ -3,7 +3,10 @@
             [cljs.pprint :as pprint]
             [poe-info.item :as item]
 
-            [poe-apps.store-manager.frontend.routes :as routes]))
+            [poe-apps.store-manager.frontend.routes :as routes]
+            [poe-apps.store-manager.frontend.fragments :as fragments]
+
+            [clojure.string :as string]))
 
 ;;;;;;;;;;;;;;;;;;;;;;; QUERIES ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -28,11 +31,26 @@
       [:h4.subheading id]]
      [:div.row
       [:div.col-6
-       [:div [:img {:src (:icon item)}]]
-       (let [tab-index (item/stash-index item)
-             tab-meta @(rf/subscribe [:tab-meta tab-index])]
-         [:div "Stash: " [:a {:href (routes/url-for :stashes :id tab-index)}
-                          (:n tab-meta)]])]
+       [:div [:img {:style {:float :left} :src (:icon item)}]]
+       [:div "Full Name: " [fragments/item-link id]]
+       (let [tab-index (item/stash-index item)]
+         [:div "Stash: " [fragments/tab-link tab-index]])
+
+       (let [{width :w height :h} item
+             size (item/size item)]
+         [:div "Size: " width "x" height "=" (item/size item)])
+
+       [:div "Rarity: " (string/capitalize (name (item/rarity item)))]
+
+       [:div "Category: " [:code (str (:category item))]]
+
+       (when-let [sockets (:sockets item)]
+         [:div "Sockets: " (item/sockets->str sockets)]
+         )
+
+       [:div "League: " (:league item)]
+
+       ]
 
       [:div.col-6
        [:pre

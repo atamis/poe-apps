@@ -6,8 +6,10 @@
             [poe-apps.store-manager.frontend.routes :as routes]
             [poe-apps.store-manager.frontend.stashes :as stashes]
             [poe-apps.store-manager.frontend.items :as items-frontend]
+            [poe-apps.store-manager.frontend.fragments :as fragments]
             [cljs.pprint :as pprint]
             ))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;; EVENTS ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -39,6 +41,7 @@
 (rf/reg-event-db
  :tab-update-response
  (fn [db [_ body]]
+   #_
    (doseq [idx (map :i body)]
      (rf/dispatch [:update-stash idx])
      )
@@ -82,10 +85,10 @@
   [:tr
    {:key (:i tab)}
    [:td (:i tab)]
-   [:td (:n tab)]
+   [:td [fragments/tab-link (:i tab)]]
    [:td
     [:div
-     {:style  {:background-color (stashes/tab-color-style tab)
+     {:style  {:background-color (fragments/tab-color-style tab)
                :width "100px"
                :height "1em"}}]]
    [:td (stashes/type-tab-name (:type tab))]
@@ -189,5 +192,8 @@
 ;; This is called every time you make a code change
 
 
-#_(defn ^:after-load reload []
-    (set! (.-innerText (js/document.getElementById "app")) "Reloaded store-manager!"))
+(defn ^:after-load reload []
+  (rf/clear-subscription-cache!)
+  (reagent/render [ui]
+                  (js/document.getElementById "app"))
+    #_(set! (.-innerText (js/document.getElementById "app")) "Reloaded store-manager!"))

@@ -6,7 +6,8 @@
             [poe-info.util :as util]
             [poe-info.constants :as constants]
             [clojure.string :as string]
-            [cljs.pprint :as pprint]))
+            [cljs.pprint :as pprint]
+            [poe-apps.store-manager.frontend.fragments :as fragments]))
 
 ;;;;;;;;;;;;;;;;;;;;;;; EVENTS ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -40,7 +41,13 @@
 (rf/reg-sub
  ::stash
  (fn [db [_ idx]]
-   (-> db :stashes (get idx))))
+   (if-let [stash (-> db :stashes (get idx))]
+     stash
+     (do (rf/dispatch [:update-stash idx])
+       nil
+       )
+     )
+   ))
 
 ;;;;;;;;;;;;;;;;;;;;;;; VIEWS ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -52,10 +59,6 @@
   Good for a human understandable index (kind of). "
   [{:keys [x y]}]
   (+ y (* x constants/stash-height)))
-
-(defn tab-color-style
-  [{{:keys [r g b]} :colour}]
-  (pprint/cl-format nil "rgb(~D, ~D, ~D)" r g b))
 
 (def type-tab-name #({"CurrencyStash" "Currency"
                       "NormalStash" "Normal"
@@ -74,21 +77,12 @@
            (let [{idx :i name :n} tab]
              [:div.tab
               {:key idx
-               :style {:background-color (tab-color-style tab)}
+               :style {:background-color (fragments/tab-color-style tab)}
                :title name}
               [:a {:href (routes/url-for :stashes :id idx)}
                name]]))
          @(rf/subscribe [:tab-list]))]])
 
-(def rarity-color
-  {:normal "#eeeeeeee"
-   :magic "rgb(136, 120, 255)"
-   :rare "rgb(245, 255, 120)"
-   :unique "rgb(255, 196, 120)"
-   :gem "rgb(96, 212, 206)"
-   :currency "rgb(187, 187, 187)"
-   :divination "rgb(255, 232, 216)"
-   :prophecy "rgb(255, 120, 250)"})
 
 (defn item-blocks-view
   [blocks]
@@ -106,15 +100,19 @@
 (defn item-table-list
   [item note?]
   [:tr {:key (:id item)}
-   [:td [:a {:href (routes/url-for :items :id (:id item))}
+   [:td
+    [fragments/item-link (:id item)]
+    #_[:a {:href (routes/url-for :items :id (:id item))}
          (item/full-item-name item)]]
 
    [:td [:img {:src (:icon item)
                :title (item/item->str item)}]]
 
    [:td
-    {:style {:background-color (rarity-color (item/rarity item))}}
+    {:style {:background-color (fragments/item-rarity-color item)}}
     (string/capitalize (name (item/rarity item)))]
+
+   [:td [:code (str (:category item))]]
 
    (when note?
      [:td
@@ -159,10 +157,10 @@
          [:div.col-1 "Full"]]
         [:div.row
          [:div.col-1 idx]
-         [:div.col-1 name]
+         [:div.col-1 (when idx [fragments/tab-link idx])]
          [:div.col-1
           [:div
-           {:style  {:background-color (tab-color-style tab-meta)
+           {:style  {:background-color (fragments/tab-color-style tab-meta)
                      :width "100px"
                      :height "1em"}}]]
          [:div.col-1 (type-tab-name (:type tab-meta))]
@@ -191,6 +189,7 @@
          [:th "Name"]
          [:th "Icon"]
          [:th "Rarity"]
+         [:th "Category"]
          (when note?
            [:th "Note"])
          [:th "Item"]]]

@@ -1,3 +1,7 @@
 {:deps
- {juxt.edge/edge.system {:local/root "../edge.system"}
-  juxt.edge/app.logging {:local/root "../edge.app.logging"}}}
+ {juxt.edge/edge.system {:local/root "../edge.system"
+                         :deps/manifest :deps
+                         }
+  juxt.edge/app.logging {:local/root "../edge.app.logging"
+                         :deps/manifest :deps
+                         }}}

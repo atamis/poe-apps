@@ -31,3 +31,12 @@
   white-space: -o-pre-wrap;    /* Opera 7 */
   word-wrap: break-word;
 }
+
+.swatch {
+  width: 1em;
+  height: 1em;
+  display: inline-block;
+  margin-left: 0.2em;
+  vertical-align: middle;
+}
+
