@@ -44,8 +44,14 @@
  (fn [db [_ id]]
    (if-let [item (-> db :items (get id))]
      item
-     (do (rf/dispatch [:update-item id])
-         nil))))
+     (if-let [item (->> (:stashes db)
+                        (map second)
+                        (mapcat :items)
+                        (filter #(= (:id %) id))
+                        first)]
+       item
+       (do (rf/dispatch [:update-item id])
+           nil)))))
 
 #_(rf/reg-sub
    :item-id
