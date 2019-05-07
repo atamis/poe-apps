@@ -41,7 +41,7 @@
 (defn item-link
   [id]
   (let [item @(rf/subscribe [:item-id id])]
-    [:a {:href (routes/url-for :items :id (:id item))}
+    [:a {:href (routes/url-for :items :id id)}
      (item/full-item-name item)
      [:div {:class "swatch"
             :style {:background-color (item-rarity-color item)}}]

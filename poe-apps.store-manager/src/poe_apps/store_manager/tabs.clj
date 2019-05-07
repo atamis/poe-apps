@@ -7,7 +7,8 @@
    [clojure.java.io :as io]
    [clojure.string :as string]))
 
-(def files (->> (io/file "cache/")
+(def files (->> (io/resource "cache/")
+                io/file
                 file-seq
                 (filter #(.endsWith (.getName %) ".json"))
                 (sort-by #(Integer/parseInt

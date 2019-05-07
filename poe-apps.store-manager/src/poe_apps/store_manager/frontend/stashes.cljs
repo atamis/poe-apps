@@ -101,7 +101,8 @@
   [item note?]
   [:tr {:key (:id item)}
    [:td
-    [fragments/item-link (:id item)]
+    (when item
+      [fragments/item-link (:id item)])
     #_[:a {:href (routes/url-for :items :id (:id item))}
          (item/full-item-name item)]]
 

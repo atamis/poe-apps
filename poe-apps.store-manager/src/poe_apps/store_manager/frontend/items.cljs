@@ -15,7 +15,7 @@
 
 (rf/reg-event-fx
  :update-item
- (fn [_ [_ id]]
+ (fn [db [_ id]]
    {:http-xhrio
     {:method :get
      :uri (str "/api/items/" id)
@@ -38,6 +38,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;; QUERIES ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
+;; TODO maybe check the stash cache too.
 (rf/reg-sub
  :item-id
  (fn [db [_ id]]
