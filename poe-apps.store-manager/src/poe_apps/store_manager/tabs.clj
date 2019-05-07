@@ -37,6 +37,23 @@
   [_ x]
   (yada/as-resource tabs))
 
+(def items (->> files (mapcat :items)))
+
+(defmethod ig/init-key ::items-resource
+  [_ _]
+  (yada/resource
+   {:parameters {:path {:id String}}
+    :methods {:get
+              {:produces #{"application/json" "application/edn;q=0.9"}
+               :response (fn [ctx]
+                           (let [id (get-in ctx [:parameters :path :id])]
+                             (first (filter #(= (:id %) id) items))
+                             )
+                           )}}
+    }
+   )
+  )
+
 (defn string-resource
   [x]
   (yada/as-resource x))

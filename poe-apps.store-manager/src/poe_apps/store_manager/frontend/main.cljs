@@ -26,6 +26,7 @@
    {:tab-list []
     :active-route {:handler :home}
     :stashes {}
+    :items {}
     }))
 
 (rf/reg-event-fx

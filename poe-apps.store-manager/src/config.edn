@@ -16,6 +16,7 @@
  {:poe-apps.store-manager.tabs/string "Hello, store-manager!"
   :poe-apps.store-manager.tabs/tabs-resource nil
   :poe-apps.store-manager.tabs/cached nil
+  :poe-apps.store-manager.tabs/items-resource nil
   [:edge.yada.ig/classpath-name :poe-apps.store-manager/index] {:name "index.html"}
   [:edge.yada.ig/resources :poe-apps.store-manager/assets] {:path "public/"}
   :edge.yada.ig/listener {:handler #ig/ref :edge.bidi.ig/vhost
@@ -25,10 +26,9 @@
                          [["/" #ig/ref [:edge.yada.ig/classpath-name :poe-apps.store-manager/index]]
                           ["/hello" #ig/ref :poe-apps.store-manager.tabs/string]
                           ["/api"
-                           [["/tabs" [
-                                      ["" #ig/ref :poe-apps.store-manager.tabs/tabs-resource]
-                                      [["/" :id] #ig/ref :poe-apps.store-manager.tabs/cached]
-                                      ]]]]
+                           [["/tabs" [["" #ig/ref :poe-apps.store-manager.tabs/tabs-resource]
+                                      [["/" :id] #ig/ref :poe-apps.store-manager.tabs/cached]]]
+                            ["/items" [[["/" :id] #ig/ref :poe-apps.store-manager.tabs/items-resource]]]]]
                           ["" #ig/ref [:edge.yada.ig/resources :poe-apps.store-manager/assets]]]]]]}
 
  :ig.system/dev
