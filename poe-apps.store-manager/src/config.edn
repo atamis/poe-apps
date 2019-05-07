@@ -21,7 +21,7 @@
   [:edge.yada.ig/resources :poe-apps.store-manager/assets] {:path "public/"}
   :edge.yada.ig/listener {:handler #ig/ref :edge.bidi.ig/vhost
                           :port 8989}
-  :edge.bidi.ig/vhost [["http://localhost:8989"
+  :edge.bidi.ig/vhost [[:* #_"http://localhost:8989"
                         [""
                          [["/" #ig/ref [:edge.yada.ig/classpath-name :poe-apps.store-manager/index]]
                           ["/hello" #ig/ref :poe-apps.store-manager.tabs/string]
