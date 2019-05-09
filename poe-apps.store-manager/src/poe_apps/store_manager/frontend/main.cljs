@@ -46,7 +46,7 @@
    (doseq [idx (map :i body)]
      (rf/dispatch [:update-stash idx])
      )
-   (assoc db :tab-list body)))
+   (assoc db :tab-list (sort-by :i body))))
 
 (rf/reg-event-db
  :tab-update-response-error

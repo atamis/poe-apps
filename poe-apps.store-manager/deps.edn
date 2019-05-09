@@ -10,6 +10,8 @@
 
   org.clojure/tools.logging {:mvn/version "0.5.0-alpha"}
   poe-info {:mvn/version "0.1.0-SNAPSHOT"}
+  crux.ig {:local/root "../lib/crux.ig"}
+  juxt/crux {:mvn/version "19.04-1.0.2-alpha"}
   }
 
  :aliases

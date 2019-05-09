@@ -14,8 +14,12 @@
 
  :ig.system/base
  {:poe-apps.store-manager.tabs/string "Hello, store-manager!"
-  :poe-apps.store-manager.tabs/tabs-resource nil
-  :poe-apps.store-manager.tabs/cached nil
+  [:juxt.crux.ig.system/cluster-node :poe-apps.store-manager/system]
+  {:kv-backend "crux.kv.memdb.MemKv"
+   :bootstrap-servers "localhost:9092"}
+
+  :poe-apps.store-manager.tabs/tabs-resource #ig/ref [:juxt.crux.ig.system/cluster-node :poe-apps.store-manager/system]
+  :poe-apps.store-manager.tabs/cached #ig/ref [:juxt.crux.ig.system/cluster-node :poe-apps.store-manager/system]
   :poe-apps.store-manager.tabs/items-resource nil
   [:edge.yada.ig/classpath-name :poe-apps.store-manager/index] {:name "index.html"}
   [:edge.yada.ig/resources :poe-apps.store-manager/assets] {:path "public/"}
