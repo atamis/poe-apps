@@ -21,18 +21,22 @@
   :poe-apps.store-manager.tabs/tabs-resource #ig/ref [:juxt.crux.ig.system/cluster-node :poe-apps.store-manager/system]
   :poe-apps.store-manager.tabs/cached #ig/ref [:juxt.crux.ig.system/cluster-node :poe-apps.store-manager/system]
   :poe-apps.store-manager.tabs/items-resource #ig/ref [:juxt.crux.ig.system/cluster-node :poe-apps.store-manager/system]
+  :poe-apps.store-manager.tabs/predict-resource nil
   [:edge.yada.ig/classpath-name :poe-apps.store-manager/index] {:name "index.html"}
   [:edge.yada.ig/resources :poe-apps.store-manager/assets] {:path "public/"}
   :edge.yada.ig/listener {:handler #ig/ref :edge.bidi.ig/vhost
                           :port 8989}
-  :edge.bidi.ig/vhost [[:* #_"http://localhost:8989"
+  :edge.bidi.ig/vhost [[:*
                         [""
                          [["/" #ig/ref [:edge.yada.ig/classpath-name :poe-apps.store-manager/index]]
                           ["/hello" #ig/ref :poe-apps.store-manager.tabs/string]
                           ["/api"
                            [["/tabs" [["" #ig/ref :poe-apps.store-manager.tabs/tabs-resource]
                                       [["/" :id] #ig/ref :poe-apps.store-manager.tabs/cached]]]
-                            ["/items" [[["/" :id] #ig/ref :poe-apps.store-manager.tabs/items-resource]]]]]
+                            ["/items" [[["/" :id] [["" #ig/ref :poe-apps.store-manager.tabs/items-resource]
+                                                   ["/predict" #ig/ref :poe-apps.store-manager.tabs/predict-resource]
+                                                   ]
+                                        ]]]]]
                           ["" #ig/ref [:edge.yada.ig/resources :poe-apps.store-manager/assets]]]]]]}
 
  :ig.system/dev

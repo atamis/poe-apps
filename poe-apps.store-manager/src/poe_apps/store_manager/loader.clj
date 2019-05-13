@@ -3,12 +3,12 @@
             [clojure.data.json :as json]
             [clojure.string :as string]
             [poe-info.item :as item]
-            [crux.api :as crux]
-            ))
-
+            [crux.api :as crux]))
 
 (comment
-  (def system (get integrant.repl.state/system [:juxt.crux.ig.system/cluster-node :poe-apps.store-manager/system]))
+  (def system (get integrant.repl.state/system
+                   [:juxt.crux.ig.system/cluster-node
+                    :poe-apps.store-manager/system]))
 
   (def db (crux/db system))
 
@@ -21,12 +21,9 @@
 
   (count
    (crux/q (crux/db system) '{:find [id]
-                              :where [[_ :crux.db/id id]
-                                      ]})
-   )
+                              :where [[_ :crux.db/id id]]}))
 
-  (crux/sync system (java.time.duration/ofminutes 10))
-  )
+  (crux/sync system (java.time.duration/ofminutes 10)))
 
 (defn uuid
   []
@@ -47,25 +44,18 @@
           (let [name (.getName file)]
             (with-open [f (io/reader file)]
               (json/read f :key-fn keyword)))))
-       (into []))
-  )
+       (into [])))
 
 (defn entity-id-uuid
   [{:keys [id]}]
-  (crux.codec/new-id id)
-  )
-
+  (crux.codec/new-id id))
 
 (defn item->tx
   [stash-id item]
   (let [item-uuid (entity-id-uuid item)]
     [:crux.tx/put item-uuid
      (merge item {:crux.db/id item-uuid
-                  :item/stash stash-id
-                  })
-     ]
-    )
-  )
+                  :item/stash stash-id})]))
 
 (defn load-stash-tx
   [stash-index {:keys [tabs items] :as stash}]
@@ -78,13 +68,10 @@
 (defn purge-system
   [system]
   (->> (crux/q (crux/db system) '{:find [id]
-                    :where [[_ :crux.db/id id]
-                            ]})
+                                  :where [[_ :crux.db/id id]]})
        (map first)
        (map (fn [id] [:crux.tx/evict id]))
        (into [])
-       (crux/submit-tx system)
-       ))
+       (crux/submit-tx system)))
 
-
-#_ "035c37b7b1a20c8d92644361fc88ed5a3e77cce4c6cfb8ea82d9a627da06977c"
+#_"035c37b7b1a20c8d92644361fc88ed5a3e77cce4c6cfb8ea82d9a627da06977c"

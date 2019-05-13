@@ -8,8 +8,7 @@
    [clojure.string :as string]
    [crux.api :as crux]
    [crux.codec :as codec]
-   [cheshire.generate :as generate]
-   ))
+   [cheshire.generate :as generate]))
 
 (defn load-entities
   [db seq]
@@ -24,23 +23,6 @@
                         (.writeString jsonGenerator
                                       (str c))))
 
-#_
-(def files (->> (io/resource "cache/")
-                io/file
-                file-seq
-                (filter #(.endsWith (.getName %) ".json"))
-                (sort-by #(Integer/parseInt
-                           (second
-                            (string/split (.getName %)
-                                          #"_"))))
-                (map
-                 (fn [file]
-                   (let [name (.getName file)]
-                     (with-open [f (io/reader file)]
-                       (json/read f :key-fn keyword)))))
-                (into [])))
-(def files [])
-
 (defmethod ig/init-key ::cached
   [_ system]
   (yada/resource
@@ -54,24 +36,17 @@
                             tab-id (-> (crux/q db
                                                {:find ['id]
                                                 :where [['id :i 'index]]
-                                                :args [{:index index}]
-                                                })
-                                       first first
-                                       )
+                                                :args [{:index index}]})
+                                       first first)
                             items
                             (load-entities db
                                            (crux/q db
                                                    {:find ['item-id]
                                                     :where [['item-id :item/stash 'id]]
-                                                    :args [{:id tab-id}]
-                                                    }
-                                                   ))
-                            tab (crux/entity db tab-id)
-                            ]
-                        (assoc tab :items items)
-                        ))}}}))
+                                                    :args [{:id tab-id}]}))
 
-(def tabs (->> files first :tabs))
+                            tab (crux/entity db tab-id)]
+                        (assoc tab :items items)))}}}))
 
 (defmethod ig/init-key ::tabs-resource
   [_ system]
@@ -83,16 +58,8 @@
                       (let [db (crux/db system)]
                         (->> (crux/q db '{:find [id]
                                           :where [[id :n _]
-                                                  [id :i _]]
-                                          })
-                             (load-entities db)
-                             )
-                        )
-                      )}
-              }}
-   ))
-
-(def items (->> files (mapcat :items)))
+                                                  [id :i _]]})
+                             (load-entities db))))}}}))
 
 (defmethod ig/init-key ::items-resource
   [_ system]
@@ -107,14 +74,20 @@
                     (->> {:find ['id]
                           :where
                           [['id :id 'item-id]]
-                          :args [{:item-id id}]
-                          }
+                          :args [{:item-id id}]}
                          (crux/q db)
                          first first ;; strip crux response
-                         (crux/entity db)
-                         )
-                    )
-                  )}}
+                         (crux/entity db))))}}}))
+
+(defmethod ig/init-key ::predict-resource
+  [_ _]
+  (yada/resource
+   {:parameters {:path {:id String}}
+    :methods
+    {:post
+     {:response (fn [ctx] "not implemented")
+      }
+     }
     }
    )
   )

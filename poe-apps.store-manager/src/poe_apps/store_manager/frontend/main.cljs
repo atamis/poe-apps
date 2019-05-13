@@ -7,8 +7,7 @@
             [poe-apps.store-manager.frontend.stashes :as stashes]
             [poe-apps.store-manager.frontend.items :as items-frontend]
             [poe-apps.store-manager.frontend.fragments :as fragments]
-            [cljs.pprint :as pprint]
-            ))
+            [cljs.pprint :as pprint]))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;; EVENTS ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -26,8 +25,7 @@
    {:tab-list []
     :active-route {:handler :home}
     :stashes {}
-    :items {}
-    }))
+    :items {}}))
 
 (rf/reg-event-fx
  :update-tab-list
@@ -42,10 +40,8 @@
 (rf/reg-event-db
  :tab-update-response
  (fn [db [_ body]]
-   #_
-   (doseq [idx (map :i body)]
-     (rf/dispatch [:update-stash idx])
-     )
+   #_(doseq [idx (map :i body)]
+       (rf/dispatch [:update-stash idx]))
    (assoc db :tab-list (sort-by :i body))))
 
 (rf/reg-event-db
@@ -56,6 +52,7 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;; QUERIES ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 (rf/reg-sub
  :tab-list
@@ -75,11 +72,10 @@
 (rf/reg-sub
  :tab-meta
  (fn [db [_ idx]]
-   (-> db :tab-list (nth idx))
-   )
- )
+   (-> db :tab-list (nth idx))))
 
 ;;;;;;;;;;;;;;;;;;;;;;; VIEWS ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 (defn tab-list-row
   [tab]
@@ -100,9 +96,7 @@
    [:td
     [:a.button
      {:on-click #(rf/dispatch [:update-stash (:i tab)])}
-     "Load"]
-    ]
-   ])
+     "Load"]]])
 
 (defn tab-list-view
   []
@@ -117,8 +111,7 @@
         [:th "Color"]
         [:th "Type"]
         [:th "Image"]
-        [:th ""]
-        ]
+        [:th ""]]
        [:tbody
         (map tab-list-row tab-list)]]]]))
 
@@ -149,9 +142,7 @@
                  :route-params
                  :id
                  js/parseInt)]
-     [stashes/stash-view idx]
-     )]
-  )
+     [stashes/stash-view idx])])
 
 (defmethod page :items
   [_]
@@ -159,9 +150,7 @@
                deref
                :route-params
                :id)]
-    [items-frontend/item-view id]
-    )
-  )
+    [items-frontend/item-view id]))
 
 (defmethod page :about
   [_]
@@ -197,4 +186,4 @@
   (rf/clear-subscription-cache!)
   (reagent/render [ui]
                   (js/document.getElementById "app"))
-    #_(set! (.-innerText (js/document.getElementById "app")) "Reloaded store-manager!"))
+  #_(set! (.-innerText (js/document.getElementById "app")) "Reloaded store-manager!"))
