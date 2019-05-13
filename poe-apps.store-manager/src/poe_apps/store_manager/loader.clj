@@ -17,6 +17,13 @@
                (map (fn [[id stash]] (load-stash-tx id stash)))
                (reduce into)))
 
+  (def crux-system (get integrant.repl.state/system [:juxt.crux.ig.system/cluster-node :poe-apps.store-manager/system]))
+
+  (count
+   (crux/q (crux/db system) '{:find [id]
+                              :where [[_ :crux.db/id id]
+                                      ]})
+   )
 
   (crux/sync system (java.time.duration/ofminutes 10))
   )

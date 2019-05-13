@@ -75,7 +75,7 @@
 (rf/reg-sub
  :tab-meta
  (fn [db [_ idx]]
-   (-> db :tab-list (get idx))
+   (-> db :tab-list (nth idx))
    )
  )
 
