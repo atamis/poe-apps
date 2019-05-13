@@ -58,10 +58,18 @@
                                                 })
                                        first first
                                        )
+                            items
+                            (load-entities db
+                                           (crux/q db
+                                                   {:find ['item-id]
+                                                    :where [['item-id :item/stash 'id]]
+                                                    :args [{:id tab-id}]
+                                                    }
+                                                   ))
                             tab (crux/entity db tab-id)
                             ]
-                        tab
-                        #_(nth files (get-in ctx [:parameters :path :id]))))}}}))
+                        (assoc tab :items items)
+                        ))}}}))
 
 (def tabs (->> files first :tabs))
 
@@ -87,16 +95,26 @@
 (def items (->> files (mapcat :items)))
 
 (defmethod ig/init-key ::items-resource
-  [_ _]
+  [_ system]
   (yada/resource
    {:parameters {:path {:id String}}
-    :methods {:get
-              {:produces #{"application/json" "application/edn;q=0.9"}
-               :response (fn [ctx]
-                           (let [id (get-in ctx [:parameters :path :id])]
-                             (first (filter #(= (:id %) id) items))
-                             )
-                           )}}
+    :methods
+    {:get
+     {:produces #{"application/json" "application/edn;q=0.9"}
+      :response (fn [ctx]
+                  (let [db (crux/db system)
+                        id (get-in ctx [:parameters :path :id])]
+                    (->> {:find ['id]
+                          :where
+                          [['id :id 'item-id]]
+                          :args [{:item-id id}]
+                          }
+                         (crux/q db)
+                         first first ;; strip crux response
+                         (crux/entity db)
+                         )
+                    )
+                  )}}
     }
    )
   )

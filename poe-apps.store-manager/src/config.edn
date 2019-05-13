@@ -20,7 +20,7 @@
 
   :poe-apps.store-manager.tabs/tabs-resource #ig/ref [:juxt.crux.ig.system/cluster-node :poe-apps.store-manager/system]
   :poe-apps.store-manager.tabs/cached #ig/ref [:juxt.crux.ig.system/cluster-node :poe-apps.store-manager/system]
-  :poe-apps.store-manager.tabs/items-resource nil
+  :poe-apps.store-manager.tabs/items-resource #ig/ref [:juxt.crux.ig.system/cluster-node :poe-apps.store-manager/system]
   [:edge.yada.ig/classpath-name :poe-apps.store-manager/index] {:name "index.html"}
   [:edge.yada.ig/resources :poe-apps.store-manager/assets] {:path "public/"}
   :edge.yada.ig/listener {:handler #ig/ref :edge.bidi.ig/vhost

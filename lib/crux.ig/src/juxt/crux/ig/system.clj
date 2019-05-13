@@ -44,3 +44,7 @@
 (defmethod ig/init-key ::cluster-node
   [_ opts]
   (crux.api/start-cluster-node opts))
+
+(defmethod ig/halt-key! ::cluster-node
+  [_ system]
+  (.close system))
