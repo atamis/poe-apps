@@ -8,7 +8,8 @@
    [clojure.string :as string]
    [crux.api :as crux]
    [crux.codec :as codec]
-   [cheshire.generate :as generate]))
+   [cheshire.generate :as generate]
+   [manifold.deferred :as d]))
 
 (defn load-entities
   [db seq]
@@ -80,12 +81,21 @@
                          (crux/entity db))))}}}))
 
 (defmethod ig/init-key ::predict-resource
-  [_ _]
+  [_ {:keys [predict]}]
   (yada/resource
    {:parameters {:path {:id String}}
     :methods
     {:post
-     {:response (fn [ctx] "not implemented")
+     {:response
+      (fn [ctx]
+        (let [id (get-in ctx [:parameters :path :id])
+              defer (d/deferred)]
+          (clojure.core.async/>!!
+           predict
+           {:id id
+            :callback #(d/success! defer %)}
+           )
+          ))
       }
      }
     }
