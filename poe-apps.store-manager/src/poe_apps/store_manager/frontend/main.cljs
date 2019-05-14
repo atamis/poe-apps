@@ -72,7 +72,11 @@
 (rf/reg-sub
  :tab-meta
  (fn [db [_ idx]]
-   (-> db :tab-list (nth idx))))
+   (let [tab-list (-> db :tab-list)]
+     (when (< idx (count tab-list))
+       (nth tab-list idx)
+       ))
+   ))
 
 ;;;;;;;;;;;;;;;;;;;;;;; VIEWS ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

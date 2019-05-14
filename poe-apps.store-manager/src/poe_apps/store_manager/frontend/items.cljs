@@ -35,10 +35,36 @@
    (println "Error encountered loading item" idx ":" body)
    {}))
 
+(rf/reg-event-fx
+ ::item-predict
+ (fn [_ [_ id]]
+   {:http-xhrio
+    {:method :post
+     :body ""
+     :uri (str "/api/items/" id "/predict")
+     :response-format (ajax/text-response-format)
+     ;; :response-format (ajax/json-response-format {:keywords? true})
+     :on-success [::item-predict-response id]
+     :on-failure [::item-predict-response-error id]}}))
+
+(rf/reg-event-fx
+ ::item-predict-response
+ (fn [_ [_ id body]]
+   (println "Prediction for" id " received: " body)
+   {:dispatch [:update-item id]}))
+
+(rf/reg-event-fx
+ ::item-predict-response-error
+ (fn [_ [_ id body]]
+   (println "Error encountered predicting " id ": " body)))
+
+
 ;;;;;;;;;;;;;;;;;;;;;;; QUERIES ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 ;; TODO maybe check the stash cache too.
+
+
 (rf/reg-sub
  :item-id
  (fn [db [_ id]]
@@ -68,42 +94,54 @@
 (defn item-view
   [id]
   (if-let [item @(rf/subscribe [:item-id id])]
-    [:div.item-view
-     [:div.row>div.col
-      [:h1 (item/full-item-name item)]
-      [:h4.subheading id]]
-     [:div.row
-      [:div.col-6
-       [:div [:img {:style {:float :left} :src (:icon item)}]]
-       [:div "Full Name: " [fragments/item-link id]]
-       (let [tab-index (item/stash-index item)]
-         [:div "Stash: " [fragments/tab-link tab-index]])
+    (let [sanitized-item (dissoc item :crux.db/id
+                                 :item/stash :item/prediction)]
+      [:div.item-view
+       [:div.row>div.col
+        [:h1 (item/full-item-name item)]
+        [:h4.subheading id]]
+       [:div.row
+        [:div.col-6
+         [:div [:img {:style {:float :left} :src (:icon item)}]]
+         [:div "Full Name: " [fragments/item-link id]]
+         (let [tab-index (item/stash-index item)]
+           [:div "Stash: " [fragments/tab-link tab-index]])
 
-       (let [{width :w height :h} item
-             size (item/size item)]
-         [:div "Size: " width "x" height "=" (item/size item)])
+         (let [{width :w height :h} item
+               size (item/size item)]
+           [:div "Size: " width "x" height "=" (item/size item)])
 
-       [:div "Rarity: " (string/capitalize (name (item/rarity item)))]
+         [:div "Rarity: " (string/capitalize (name (item/rarity item)))]
 
-       [:div "Category: " [:code (str (:category item))]]
+         [:div "Category: " [:code (str (:category item))]]
 
-       (when-let [sockets (:sockets item)]
-         [:div "Sockets: " (item/sockets->str sockets)])
+         (when-let [sockets (:sockets item)]
+           [:div "Sockets: " (item/sockets->str sockets)])
 
-       [:div "League: " (:league item)]]
+         [:div "League: " (:league item)]
 
-      [:div.col-6
-       [:pre
-        (item/item->str item)]]]
+         (let [prediction (or (:item/prediction item) "None")]
+           [:div
+            [:div "Prediction: "
+             prediction]
 
-     [:div.row
-      [:div.col-6
-       [:pre
-        (.stringify js/JSON (clj->js item) nil 2)]]
+            [:div
+             [:a.button
+              {:on-click #(rf/dispatch [::item-predict id])}
+              "Predict Price"]]])]
 
-      [:div.col-6
-       [:pre
-        (with-out-str
-          (pprint/pprint item))]]]]
+        [:div.col-6
+         [:pre
+          (item/item->str item)]]]
+
+       [:div.row
+        [:div.col-6
+         [:pre
+          (.stringify js/JSON (clj->js sanitized-item) nil 2)]]
+
+        [:div.col-6
+         [:pre
+          (with-out-str
+            (pprint/pprint sanitized-item))]]]])
 
     [:div.row>div.col "Loading " id]))
