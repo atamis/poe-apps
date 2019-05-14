@@ -80,27 +80,23 @@
                          first first ;; strip crux response
                          (crux/entity db))))}}}))
 
+;; TODO: produce 404 when not found.
 (defmethod ig/init-key ::predict-resource
   [_ {:keys [predict]}]
   (yada/resource
    {:parameters {:path {:id String}}
     :methods
     {:post
-     {:response
+     {:produces #{"application/json" "application/edn;q=0.9"}
+      :response
       (fn [ctx]
         (let [id (get-in ctx [:parameters :path :id])
               defer (d/deferred)]
           (clojure.core.async/>!!
            predict
            {:id id
-            :callback #(d/success! defer %)}
-           )
-          ))
-      }
-     }
-    }
-   )
-  )
+            :callback #(d/success! defer %)})
+          defer))}}}))
 
 (defn string-resource
   [x]

@@ -29,7 +29,8 @@
     (if (= req :clojure.spec.alpha/invalid)
       (log/warn "Predictor received invalid request" request)
       (let [{:keys [id callback]} req]
-        (callback {:error :not-implemented :request request})
+        (callback {:error :not-implemented
+                   :id id})
         ))))
 
 (defn predictor-main
