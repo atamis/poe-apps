@@ -3,7 +3,9 @@
             [clojure.data.json :as json]
             [clojure.string :as string]
             [poe-info.item :as item]
-            [crux.api :as crux]))
+            [crux.api :as crux]
+            [poe-apps.store-manager.data :as data]
+            ))
 
 (comment
   (def system (get integrant.repl.state/system
@@ -46,13 +48,9 @@
               (json/read f :key-fn keyword)))))
        (into [])))
 
-(defn entity-id-uuid
-  [{:keys [id]}]
-  (crux.codec/new-id id))
-
 (defn item->tx
   [stash-id item]
-  (let [item-uuid (entity-id-uuid item)]
+  (let [item-uuid (data/entity-id item)]
     [:crux.tx/put item-uuid
      (merge item {:crux.db/id item-uuid
                   :item/stash stash-id})]))
@@ -60,7 +58,7 @@
 (defn load-stash-tx
   [stash-index {:keys [tabs items] :as stash}]
   (let [tab-info (nth tabs stash-index)
-        tab-uuid (entity-id-uuid tab-info)]
+        tab-uuid (data/entity-id tab-info)]
     (into [[:crux.tx/put tab-uuid
             (assoc tab-info :crux.db/id tab-uuid)]]
           (map (partial item->tx tab-uuid) items))))

@@ -1,19 +1,13 @@
 (ns poe-apps.store-manager.predictor
   (:require [integrant.core :as ig]
+            [crux.api :as crux]
             [clojure.core.async :as a]
             [clojure.spec.alpha :as s]
             [clojure.tools.logging :as log]
+            [poe-apps.store-manager.data :as data]
+            [poe-info.api :as api]
+            [poe-info.item :as item]
             ))
-
-(defn timed-loop
-  ([timeout control init tick] (timed-loop timeout control init tick (constantly nil)))
-  ([timeout control init tick done]
-   (a/go-loop [s init]
-     (let [time-chan (a/timeout timeout)
-           [_ selected] (a/alts! [control time-chan])]
-       (condp = selected
-         control (done s)
-         time-chan (recur (tick s)))))))
 
 (s/def ::callback fn?)
 
@@ -28,9 +22,27 @@
   (let [req (s/conform ::prediction-request request)]
     (if (= req :clojure.spec.alpha/invalid)
       (log/warn "Predictor received invalid request" request)
-      (let [{:keys [id callback]} req]
-        (callback {:error :not-implemented
-                   :id id})
+      (let [db (crux/db system)
+            {:keys [id callback]} req]
+        (if-let [e-id (data/entity-id-lookup db id)]
+            (let [item (crux/entity db e-id)]
+              (api/poeprices-prediction
+               (:league item)
+               (item/item->str item)
+               :async? true
+               :respond-callback
+               (fn [resp]
+                 (crux/submit-tx system
+                                 [[:crux.tx/put e-id
+                                   (assoc item :item/prediction (:body resp))
+                                   ]]
+                                 )
+                 (callback {:ok :ok :item/prediction (:body resp)})
+                 )
+               :raise-callback #(callback {:error :api-error :resp %}) ))
+
+          (callback {:error :not-found :id id})
+          )
         ))))
 
 (defn predictor-main
