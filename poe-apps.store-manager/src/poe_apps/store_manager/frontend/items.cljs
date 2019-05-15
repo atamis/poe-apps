@@ -42,16 +42,25 @@
     {:method :post
      :body ""
      :uri (str "/api/items/" id "/predict")
-     :response-format (ajax/text-response-format)
-     ;; :response-format (ajax/json-response-format {:keywords? true})
+     :response-format (ajax/json-response-format {:keywords? true})
      :on-success [::item-predict-response id]
      :on-failure [::item-predict-response-error id]}}))
 
 (rf/reg-event-fx
  ::item-predict-response
- (fn [_ [_ id body]]
+ (fn [{:keys [db]} [_ id body]]
    (println "Prediction for" id " received: " body)
-   {:dispatch [:update-item id]}))
+   (if-let [item @(rf/subscribe [:item-id id])]
+     ;; add to stash
+     {:db (assoc-in db [:items id] (assoc item
+                                                :item/prediction
+                                                (:item/prediction body)))}
+     (do
+       (println "Receieved prediction for unloaded item: " id)
+       {}
+       )
+     )
+   ))
 
 (rf/reg-event-fx
  ::item-predict-response-error

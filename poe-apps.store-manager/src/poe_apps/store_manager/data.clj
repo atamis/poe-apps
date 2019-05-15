@@ -1,11 +1,13 @@
 (ns poe-apps.store-manager.data
-  (:require [crux.api :as crux])
+  (:require [crux.api :as crux]
+            [crux.codec :as codec]
+            )
   )
 
 
 (defn entity-id
   [{:keys [id]}]
-  (crux.codec/new-id id))
+  (codec/new-id id))
 
 (defn entity-id-lookup
   [db id]

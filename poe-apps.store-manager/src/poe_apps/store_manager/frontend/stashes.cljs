@@ -98,13 +98,13 @@
     (iterate (fn [_] [:hr {:key (gensym)}]) nil))])
 
 (defn item-table-list
-  [item note?]
+  [item note? prediction?]
   [:tr {:key (:id item)}
    [:td
     (when item
       [fragments/item-link (:id item)])
     #_[:a {:href (routes/url-for :items :id (:id item))}
-         (item/full-item-name item)]]
+       (item/full-item-name item)]]
 
    [:td [:img {:src (:icon item)
                :title (item/item->str item)}]]
@@ -119,6 +119,12 @@
      [:td
       [:pre
        (str (:note item))]])
+
+   (when prediction?
+     [:td
+      (when-let [{:keys [min max]} (:item/prediction item)]
+        [:pre
+          (str (/ (+ min max) 2))])])
 
    [:td
     [item-blocks-view (item/item->blocks item)]]])
@@ -136,7 +142,9 @@
   (let [tab-meta @(rf/subscribe [:tab-meta idx])
         stash @(rf/subscribe [::stash idx])
         items (sort-by lexigraphic-stash-index (:items stash))
-        note? (some? (first  (filter #(contains? % :note) items)))]
+        note? (some? (first  (filter #(contains? % :note) items)))
+        prediction? (some? (first  (filter #(contains? % :item/prediction) items)))
+        ]
     [:div
      (let [{idx :i name :n stash-type :type :keys []} tab-meta
            capacity (stash-capacity stash-type)
@@ -182,7 +190,14 @@
          [:div.col-1
           [:a.button
            {:on-click #(rf/dispatch [:update-stash idx])}
-           "Load"]]]])
+           "Load"]]
+         [:div.col-1
+          [:a.button
+           {:on-click
+            #(doseq [item items]
+               (rf/dispatch [:poe-apps.store-manager.frontend.items/item-predict (:id item)]))}
+           "Predict"]]
+         ]])
      [:div.row>div.col
       [:table.striped
        [:thead
@@ -193,7 +208,10 @@
          [:th "Category"]
          (when note?
            [:th "Note"])
+         (when prediction?
+           [:th "Prediction"]
+           )
          [:th "Item"]]]
 
        [:tbody
-        (map #(item-table-list % note?) items)]]]]))
+        (map #(item-table-list % note? prediction?) items)]]]]))
