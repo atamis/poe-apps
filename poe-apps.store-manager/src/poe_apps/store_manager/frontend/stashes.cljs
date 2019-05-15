@@ -26,7 +26,13 @@
  ::update-stash-response
  (fn [db [_ idx body]]
    (println "Updating stash" idx)
-   (assoc-in db [:stashes idx] body)))
+   (let [{:keys [items]} body
+         new-map (into {} (map (fn [item] [(:id item) item]) items))
+         item-ids (into #{} (map :id items))
+         stash (assoc body :items item-ids)]
+     (-> db
+         (assoc-in [:stashes idx] stash)
+         (update :items #(merge % new-map))))))
 
 (rf/reg-event-fx
  ::update-stash-response-error
@@ -44,10 +50,7 @@
    (if-let [stash (-> db :stashes (get idx))]
      stash
      (do (rf/dispatch [:update-stash idx])
-       nil
-       )
-     )
-   ))
+         nil))))
 
 ;;;;;;;;;;;;;;;;;;;;;;; VIEWS ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -83,7 +86,6 @@
                name]]))
          @(rf/subscribe [:tab-list]))]])
 
-
 (defn item-blocks-view
   [blocks]
   [:div
@@ -97,37 +99,56 @@
      (util/enumerate blocks))
     (iterate (fn [_] [:hr {:key (gensym)}]) nil))])
 
-(defn item-table-list
-  [item note? prediction?]
-  [:tr {:key (:id item)}
-   [:td
-    (when item
-      [fragments/item-link (:id item)])
-    #_[:a {:href (routes/url-for :items :id (:id item))}
-       (item/full-item-name item)]]
+(defn item-table-row
+  [item-id]
+  (let [item @(rf/subscribe [:item-id item-id])]
+    [:tr {:key (:id item)}
+     ;; Name
+     [:td
+      (when item
+        [fragments/item-link (:id item)])]
 
-   [:td [:img {:src (:icon item)
-               :title (item/item->str item)}]]
+     ;; Icon
+     [:td [:img {:src (:icon item)
+                 :title (item/item->str item)}]]
 
-   [:td
-    {:style {:background-color (fragments/item-rarity-color item)}}
-    (string/capitalize (name (item/rarity item)))]
+     ;; Rarity
+     [:td
+      {:style {:background-color (fragments/item-rarity-color item)}}
+      (string/capitalize (name (item/rarity item)))]
 
-   [:td [:code (str (:category item))]]
+     ;; Category
+     [:td [:code (str (:category item))]]
 
-   (when note?
+     ;; Note
      [:td
       [:pre
-       (str (:note item))]])
+       (str (or (:note item) ""))]]
 
-   (when prediction?
+     ;; Prediction
      [:td
-      (when-let [{:keys [min max]} (:item/prediction item)]
-        [:pre
-          (str (/ (+ min max) 2))])])
+      (when-let [{:keys [min max currency]} (:item/prediction item)]
+        (when currency
+          (pprint/cl-format nil "~5F ~A" (/ (+ min max) 2) currency)))]
 
-   [:td
-    [item-blocks-view (item/item->blocks item)]]])
+     ;; Item bocks
+     [:td
+      [item-blocks-view (item/item->blocks item)]]]))
+
+(defn item-table
+  [ids]
+  [:table.striped
+   [:thead
+    [:tr
+     [:th "Name"]
+     [:th "Icon"]
+     [:th "Rarity"]
+     [:th "Category"]
+     [:th "Note"]
+     [:th "Prediction"]
+     [:th "Item"]]]
+   [:tbody
+    (doall (map item-table-row ids))]])
 
 (def stash-capacity {"NormalStash" constants/normal-stash
                      "PremiumStash" constants/normal-stash
@@ -137,81 +158,69 @@
                      "EssenceStash" constants/essence-stash
                      "FragmentStash" constants/fragment-stash})
 
+(defn stash-header
+  [tab-meta items]
+  (let [{idx :i name :n stash-type :type :keys []} tab-meta
+        capacity (stash-capacity stash-type)
+           ;; Some stashes have single slots that hold any size
+           ;; item, but count as 1 space. This leads to this number
+           ;; being a little misleading.
+        space (->> items
+                   (map (fn [id] @(rf/subscribe [:item-id id])))
+                   (map item/size)
+                   (reduce +))]
+    [:div
+     [:div.row
+      [:div.col-1 "Index"]
+      [:div.col-1 "Name"]
+      [:div.col-1 "Color"]
+      [:div.col-1 "Type"]
+      [:div.col-1 "Image"]
+      [:div.col-1 "Items"]
+      [:div.col-1 "Space"]
+      [:div.col-1 "Capacity"]
+      [:div.col-1 "Free"]
+      [:div.col-1 "Full"]]
+     [:div.row
+      [:div.col-1 idx]
+      [:div.col-1 (when idx [fragments/tab-link idx])]
+      [:div.col-1
+       [:div
+        {:style  {:background-color (fragments/tab-color-style tab-meta)
+                  :width "100px"
+                  :height "1em"}}]]
+      [:div.col-1 (type-tab-name (:type tab-meta))]
+      [:div.col-1
+       [:img {:src (:srcL tab-meta)}]
+       [:img {:src (:srcC tab-meta)}]
+       [:img {:src (:srcR tab-meta)}]]
+      [:div.col-1
+       [:span (count items)]]
+      [:div.col-1
+       [:span space]]
+      [:div.col-1
+       [:span capacity]]
+      [:div.col-1
+       [:span (- capacity space)]]
+      [:div.col-1
+       [:span (pprint/cl-format nil "~5F" (* 100 (/ space capacity))) "%"]]
+      [:div.col-1
+       [:a.button
+        {:on-click #(rf/dispatch [:update-stash idx])}
+        "Load"]]
+      [:div.col-1
+       [:a.button
+        {:on-click
+         #(doseq [item-id items]
+            (rf/dispatch [:poe-apps.store-manager.frontend.items/item-predict item-id]))}
+        "Predict"]]]]))
+
 (defn stash-view
   [idx]
   (let [tab-meta @(rf/subscribe [:tab-meta idx])
         stash @(rf/subscribe [::stash idx])
-        items (sort-by lexigraphic-stash-index (:items stash))
-        note? (some? (first  (filter #(contains? % :note) items)))
-        prediction? (some? (first  (filter #(contains? % :item/prediction) items)))
-        ]
+        items (sort-by lexigraphic-stash-index (:items stash))]
     [:div
-     (let [{idx :i name :n stash-type :type :keys []} tab-meta
-           capacity (stash-capacity stash-type)
-           ;; Some stashes have single slots that hold any size
-           ;; item, but count as 1 space. This leads to this number
-           ;; being a little misleading.
-           space (->> items (map item/size) (reduce +))]
-       [:div
-        [:div.row
-         [:div.col-1 "Index"]
-         [:div.col-1 "Name"]
-         [:div.col-1 "Color"]
-         [:div.col-1 "Type"]
-         [:div.col-1 "Image"]
-         [:div.col-1 "Items"]
-         [:div.col-1 "Space"]
-         [:div.col-1 "Capacity"]
-         [:div.col-1 "Free"]
-         [:div.col-1 "Full"]]
-        [:div.row
-         [:div.col-1 idx]
-         [:div.col-1 (when idx [fragments/tab-link idx])]
-         [:div.col-1
-          [:div
-           {:style  {:background-color (fragments/tab-color-style tab-meta)
-                     :width "100px"
-                     :height "1em"}}]]
-         [:div.col-1 (type-tab-name (:type tab-meta))]
-         [:div.col-1
-          [:img {:src (:srcL tab-meta)}]
-          [:img {:src (:srcC tab-meta)}]
-          [:img {:src (:srcR tab-meta)}]]
-         [:div.col-1
-          [:span (count items)]]
-         [:div.col-1
-          [:span space]]
-         [:div.col-1
-          [:span capacity]]
-         [:div.col-1
-          [:span (- capacity space)]]
-         [:div.col-1
-          [:span (pprint/cl-format nil "~5F" (* 100 (/ space capacity))) "%"]]
-         [:div.col-1
-          [:a.button
-           {:on-click #(rf/dispatch [:update-stash idx])}
-           "Load"]]
-         [:div.col-1
-          [:a.button
-           {:on-click
-            #(doseq [item items]
-               (rf/dispatch [:poe-apps.store-manager.frontend.items/item-predict (:id item)]))}
-           "Predict"]]
-         ]])
+     [stash-header tab-meta items]
      [:div.row>div.col
-      [:table.striped
-       [:thead
-        [:tr
-         [:th "Name"]
-         [:th "Icon"]
-         [:th "Rarity"]
-         [:th "Category"]
-         (when note?
-           [:th "Note"])
-         (when prediction?
-           [:th "Prediction"]
-           )
-         [:th "Item"]]]
-
-       [:tbody
-        (map #(item-table-list % note? prediction?) items)]]]]))
+      [item-table items]]]))

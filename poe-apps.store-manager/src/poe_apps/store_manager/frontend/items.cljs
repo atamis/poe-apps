@@ -46,21 +46,11 @@
      :on-success [::item-predict-response id]
      :on-failure [::item-predict-response-error id]}}))
 
-(rf/reg-event-fx
+(rf/reg-event-db
  ::item-predict-response
- (fn [{:keys [db]} [_ id body]]
+ (fn [db [_ id body]]
    (println "Prediction for" id " received: " body)
-   (if-let [item @(rf/subscribe [:item-id id])]
-     ;; add to stash
-     {:db (assoc-in db [:items id] (assoc item
-                                                :item/prediction
-                                                (:item/prediction body)))}
-     (do
-       (println "Receieved prediction for unloaded item: " id)
-       {}
-       )
-     )
-   ))
+   (assoc-in db [:items id :item/prediction] (:item/prediction body))))
 
 (rf/reg-event-fx
  ::item-predict-response-error

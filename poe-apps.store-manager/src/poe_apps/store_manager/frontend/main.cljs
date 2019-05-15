@@ -9,7 +9,6 @@
             [poe-apps.store-manager.frontend.fragments :as fragments]
             [cljs.pprint :as pprint]))
 
-
 ;;;;;;;;;;;;;;;;;;;;;;; EVENTS ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
@@ -40,8 +39,6 @@
 (rf/reg-event-db
  :tab-update-response
  (fn [db [_ body]]
-   #_(doseq [idx (map :i body)]
-       (rf/dispatch [:update-stash idx]))
    (assoc db :tab-list (sort-by :i body))))
 
 (rf/reg-event-db
