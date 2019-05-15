@@ -71,9 +71,7 @@
  (fn [db [_ idx]]
    (let [tab-list (-> db :tab-list)]
      (when (< idx (count tab-list))
-       (nth tab-list idx)
-       ))
-   ))
+       (nth tab-list idx)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;; VIEWS ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

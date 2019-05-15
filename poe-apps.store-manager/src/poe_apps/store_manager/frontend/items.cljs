@@ -78,15 +78,6 @@
        (do (rf/dispatch [:update-item id])
            nil)))))
 
-#_(rf/reg-sub
-   :item-id
-   (fn [db [_ id]]
-     (->> (:stashes db)
-          (map second)
-          (mapcat :items)
-          (filter #(= (:id %) id))
-          first)))
-
 ;;;;;;;;;;;;;;;;;;;;;;; VIEWS ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
@@ -133,21 +124,18 @@
               (fn [[idx [mod weight]]]
                 [:div {:key idx}
                  [:span.weight weight] [:span.mod mod]])
-              (map vector (range) expls))
-             ]
+              (map vector (range) expls))]
             (when warning
               [:div.warning (string/replace warning
                                             #"prediciton"
-                                            "prediciton [sic]")])
-            ]
+                                            "prediciton [sic]")])]
 
            [:div "Prediction: None"])
 
          [:div
           [:a.button
            {:on-click #(rf/dispatch [::item-predict id])}
-           "Predict Price"]]
-         ]
+           "Predict Price"]]]
 
         [:div.col-6
          [:pre
@@ -165,9 +153,6 @@
        [:div.row
         (when-let [prediction (:item/prediction item)]
           [:div.col-6 [:pre (with-out-str
-                              (pprint/pprint prediction))]]
-          )
-        ]
-       ])
+                              (pprint/pprint prediction))]])]])
 
     [:div.row>div.col "Loading " id]))
