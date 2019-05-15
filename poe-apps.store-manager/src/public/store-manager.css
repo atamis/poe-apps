@@ -40,3 +40,15 @@
   vertical-align: middle;
 }
 
+.explanation {
+  padding-left: 1em;
+}
+
+.explanation .weight {
+  font-weight: bold;
+  padding-right: 1em;
+}
+
+.prediction .warning {
+  font-style: italic;
+}

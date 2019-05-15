@@ -120,15 +120,35 @@
 
          [:div "League: " (:league item)]
 
-         (let [prediction (or (:item/prediction item) "None")]
-           [:div
-            [:div "Prediction: "
-             prediction]
+         (if-let [{warning :warning_msg
+                   expls :pred_explanation
+                   :keys [min max currency]
+                   :as prediction}
+                  (:item/prediction item)]
 
-            [:div
-             [:a.button
-              {:on-click #(rf/dispatch [::item-predict id])}
-              "Predict Price"]]])]
+           [:div.prediction
+            [:div "Prediction: " (pprint/cl-format nil "~5F - ~5F " min max)
+             currency " (" (/ (+ min max) 2) ")"]
+            [:div.explanation
+             (map
+              (fn [[idx [mod weight]]]
+                [:div {:key idx}
+                 [:span.weight weight] [:span.mod mod]])
+              (map vector (range) expls))
+             ]
+            (when warning
+              [:div.warning (string/replace warning
+                                            #"prediciton"
+                                            "prediciton [sic]")])
+            ]
+
+           [:div "Prediction: None"])
+
+         [:div
+          [:a.button
+           {:on-click #(rf/dispatch [::item-predict id])}
+           "Predict Price"]]
+         ]
 
         [:div.col-6
          [:pre
@@ -142,6 +162,13 @@
         [:div.col-6
          [:pre
           (with-out-str
-            (pprint/pprint sanitized-item))]]]])
+            (pprint/pprint sanitized-item))]]]
+       [:div.row
+        (when-let [prediction (:item/prediction item)]
+          [:div.col-6 [:pre (with-out-str
+                              (pprint/pprint prediction))]]
+          )
+        ]
+       ])
 
     [:div.row>div.col "Loading " id]))
