@@ -1,7 +1,1 @@
-{:ig/system
- {:poe-apps.pipelines.foo/string "Hello, poe-apps.pipelines!"
-  :edge.yada.ig/listener {:handler #ig/ref :edge.bidi.ig/vhost
-                          :port 4800}
-  :edge.bidi.ig/vhost [["http://localhost:4800"
-                        [""
-                         [["/" #ig/ref :poe-apps.pipelines.foo/string]]]]]}}
+{:ig/system nil}
