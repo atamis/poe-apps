@@ -1,4 +1,4 @@
-(ns poe-info.public-pipeline
+(ns poe-apps.pipelines.public
   (:require [kinsky.async :as kf]
             [kinsky.client :as kf-sync]
             #_[kinsky.client :as client]

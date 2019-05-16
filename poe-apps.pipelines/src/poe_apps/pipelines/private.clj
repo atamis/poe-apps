@@ -1,4 +1,4 @@
-(ns poe-info.pipeline
+(ns poe-apps.pipelines.private
   (:require [kinsky.async :as async]
             [kinsky.client :as client]
             [clojure.core.async :as a :refer [go <! >!]]
